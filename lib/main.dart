@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:untitled/bloc/counter_bloc.dart';
+import 'package:untitled/models/task_model.dart';
+import 'package:untitled/todo_bloc/todo_cubit.dart';
 
 
 void main() {
@@ -27,14 +28,6 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
 
   final String title;
 
@@ -44,14 +37,11 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  TextEditingController controller =TextEditingController();
   List<String> listName = ["ahmed ", "mohamed"];
   var testSet = {"ahmed", "ahmed", "mohamed"};
 
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -62,39 +52,48 @@ class _MyHomePageState extends State<MyHomePage> {
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
     return BlocProvider(
-      create: (context) => CounterBloc(),
-      child: BlocBuilder<CounterBloc, CounterState>(
+      create: (context) => TodoCubit(),
+      child: BlocBuilder<TodoCubit, TodoState>(
         builder: (context, state) {
           return Scaffold(
             appBar: AppBar(
-              // TRY THIS: Try changing the color here to a specific color (to
-              // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-              // change color while the other colors stay the same.
+
               backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-              // Here we take the value from the MyHomePage object that was created by
-              // the App.build method, and use it to set our appbar title.
-              title: Text(widget.title),
+              title: Text("todo App"),
             ),
             body: Center(
-                child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                const Text(
-                  'You have pushed the button this many times:',
-                ),
-                  Text(
-                    '${state.count}',
-                    style: Theme.of(context).textTheme.headlineMedium,
+              child:Column(
+                children: [
+                  TextField(
+                    controller: controller,
+
                   ),
-              ],
-            )),
-            floatingActionButton: FloatingActionButton(
-              onPressed: () {
-                context.read<CounterBloc>().add(CounterIncrement());
-              },
-              tooltip: 'Increment',
-              child: const Icon(Icons.add),
-            ), // This trailing comma makes auto-formatting nicer for build methods.
+                  ElevatedButton(onPressed: (){
+                    context.read<TodoCubit>().addTask(TaskModel(id:_counter++ , title: controller.text));
+
+                  }, child: Text("create a task")),
+                  Expanded(
+                      child: ListView.builder(
+                    itemCount: state.list.length,
+                    itemBuilder: (context, index) {
+                      final task = state.list[index];
+                      return ListTile(
+                        title: Text(task.title),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () {
+                            context.read<TodoCubit>().removeTask(task);
+                          },
+                        ),
+                      );
+                    },
+                  ))
+                ],
+              ) ,
+
+
+            ),
+           // This trailing comma makes auto-formatting nicer for build methods.
           );
         },
       ),
