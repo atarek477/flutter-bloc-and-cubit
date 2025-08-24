@@ -1,101 +1,116 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:untitled/models/task_model.dart';
-import 'package:untitled/todo_bloc/todo_cubit.dart';
+import 'package:untitled/genericList/generic_list_cubit.dart';
 
 
-void main() {
-  runApp(const MyApp());
-}
+void main() => runApp(const TabBarApp());
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class TabBarApp extends StatelessWidget {
+  const TabBarApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
+    return MaterialApp(home: BlocProvider(
+      create: (context) =>
+      GenericListCubit()
+        ..getData(1),
+      child: const TabBarExample(),
+    ));
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-
-  final String title;
+class TabBarExample extends StatefulWidget {
+  const TabBarExample({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<TabBarExample> createState() => _TabBarExampleState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-  TextEditingController controller =TextEditingController();
-  List<String> listName = ["ahmed ", "mohamed"];
-  var testSet = {"ahmed", "ahmed", "mohamed"};
+class _TabBarExampleState extends State<TabBarExample>
+    with TickerProviderStateMixin {
+  late final TabController _tabController;
 
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
 
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) return;
+      final currentIndex = _tabController.index;
+
+      if (currentIndex == 0) {
+        context.read<GenericListCubit>().getData(1);
+      } else if (currentIndex == 1) {
+        context.read<GenericListCubit>().getData(2);
+
+      } else if (currentIndex == 2) {
+        context.read<GenericListCubit>().getData(3);
+
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return BlocProvider(
-      create: (context) => TodoCubit(),
-      child: BlocBuilder<TodoCubit, TodoState>(
-        builder: (context, state) {
-          return Scaffold(
-            appBar: AppBar(
-
-              backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-              title: Text("todo App"),
-            ),
-            body: Center(
-              child:Column(
-                children: [
-                  TextField(
-                    controller: controller,
-
-                  ),
-                  ElevatedButton(onPressed: (){
-                    context.read<TodoCubit>().addTask(TaskModel(id:_counter++ , title: controller.text));
-
-                  }, child: Text("create a task")),
-                  Expanded(
-                      child: ListView.builder(
-                    itemCount: state.list.length,
-                    itemBuilder: (context, index) {
-                      final task = state.list[index];
-                      return ListTile(
-                        title: Text(task.title),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () {
-                            context.read<TodoCubit>().removeTask(task);
-                          },
-                        ),
-                      );
-                    },
-                  ))
-                ],
-              ) ,
-
-
-            ),
-           // This trailing comma makes auto-formatting nicer for build methods.
-          );
-        },
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('TabBar Sample'),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const <Widget>[
+            Tab(icon: Icon(Icons.cloud_outlined)),
+            Tab(icon: Icon(Icons.beach_access_sharp)),
+            Tab(icon: Icon(Icons.brightness_5_sharp)),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: <Widget>[
+          BlocBuilder<GenericListCubit, GenericListState>(
+            builder: (context, state) {
+              if (state is GenericListLoaded && state.type == 1) {
+                return ListView.builder(
+                  itemCount: state.list.length,
+                  itemBuilder: (context, index) =>
+                      ListTile(title: Text(state.list[index])),
+                );
+              }
+              return const Center(child: CircularProgressIndicator());
+            },
+          ),
+          BlocBuilder<GenericListCubit, GenericListState>(
+            builder: (context, state) {
+              if (state is GenericListLoaded && state.type == 2) {
+                return ListView.builder(
+                  itemCount: state.list.length,
+                  itemBuilder: (context, index) =>
+                      ListTile(title: Text(state.list[index])),
+                );
+              }
+              return const Center(child: CircularProgressIndicator());
+            },
+          ),
+          BlocBuilder<GenericListCubit, GenericListState>(
+            builder: (context, state) {
+              if (state is GenericListLoaded && state.type == 3) {
+                return ListView.builder(
+                  itemCount: state.list.length,
+                  itemBuilder: (context, index) =>
+                      ListTile(title: Text(state.list[index])),
+                );
+              }
+              return const Center(child: CircularProgressIndicator());
+            },
+          ),
+        ],
       ),
     );
   }
