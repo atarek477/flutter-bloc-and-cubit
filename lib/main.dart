@@ -1,138 +1,117 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:untitled/genericList/generic_list_cubit.dart';
 
-void main() {
-  runApp(const MyApp());
-}
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+void main() => runApp(const TabBarApp());
 
-  // This widget is the root of your application.
+class TabBarApp extends StatelessWidget {
+  const TabBarApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
+    return MaterialApp(home: BlocProvider(
+      create: (context) =>
+      GenericListCubit()
+        ..getData(1),
+      child: const TabBarExample(),
+    ));
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class TabBarExample extends StatefulWidget {
+  const TabBarExample({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<TabBarExample> createState() => _TabBarExampleState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-  List<String> listName = ["ahmed ","mohamed"];
-  var testSet = {"ahmed","ahmed","mohamed"};
+class _TabBarExampleState extends State<TabBarExample>
+    with TickerProviderStateMixin {
+  late final TabController _tabController;
 
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
 
-  void _incrementCounter() {
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) return;
+      final currentIndex = _tabController.index;
 
-    setState(() {
-       switch(_counter){
-         case 0:
-           print("counter is not 0 ");
-           testSet.add("noor");
-           testSet.forEach((it) => print(it));
+      if (currentIndex == 0) {
+        context.read<GenericListCubit>().getData(1);
+      } else if (currentIndex == 1) {
+        context.read<GenericListCubit>().getData(2);
 
-           break;
-         case 1:
-           print("counter is not 1 ");
-           break;
-         case 2 :
-           print("we want to type some code cuz we almost forget how to code ");
+      } else if (currentIndex == 2) {
+        context.read<GenericListCubit>().getData(3);
 
-       }
-      _counter++;
+      }
     });
   }
 
   @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+        title: const Text('TabBar Sample'),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const <Widget>[
+            Tab(icon: Icon(Icons.cloud_outlined)),
+            Tab(icon: Icon(Icons.beach_access_sharp)),
+            Tab(icon: Icon(Icons.brightness_5_sharp)),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      body: TabBarView(
+        controller: _tabController,
+        children: <Widget>[
+          BlocBuilder<GenericListCubit, GenericListState>(
+            builder: (context, state) {
+              if (state is GenericListLoaded && state.type == 1) {
+                return ListView.builder(
+                  itemCount: state.list.length,
+                  itemBuilder: (context, index) =>
+                      ListTile(title: Text(state.list[index])),
+                );
+              }
+              return const Center(child: CircularProgressIndicator());
+            },
+          ),
+          BlocBuilder<GenericListCubit, GenericListState>(
+            builder: (context, state) {
+              if (state is GenericListLoaded && state.type == 2) {
+                return ListView.builder(
+                  itemCount: state.list.length,
+                  itemBuilder: (context, index) =>
+                      ListTile(title: Text(state.list[index])),
+                );
+              }
+              return const Center(child: CircularProgressIndicator());
+            },
+          ),
+          BlocBuilder<GenericListCubit, GenericListState>(
+            builder: (context, state) {
+              if (state is GenericListLoaded && state.type == 3) {
+                return ListView.builder(
+                  itemCount: state.list.length,
+                  itemBuilder: (context, index) =>
+                      ListTile(title: Text(state.list[index])),
+                );
+              }
+              return const Center(child: CircularProgressIndicator());
+            },
+          ),
+        ],
+      ),
     );
   }
 }
